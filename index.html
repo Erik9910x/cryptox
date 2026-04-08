@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CryptoX Demo Trading</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/charts.css">
+  <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+<div class="app">
+  <!-- HEADER -->
+  <header class="app-header">
+    <div style="display:flex;align-items:center;gap:24px">
+      <div class="logo">
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="#f0b90b" stroke-width="2.5"/><path d="M16 6l3 4h-2v4h4v-2l4 3-4 3v-2h-4v4h2l-3 4-3-4h2v-4h-4v2l-4-3 4-3v2h4v-4h-2z" fill="#f0b90b"/></svg>
+        CryptoX
+      </div>
+      <nav class="nav">
+        <button class="nav-btn active" data-page="markets">Markets</button>
+        <button class="nav-btn" data-page="trade">Trade</button>
+        <button class="nav-btn" data-page="portfolio">Portfolio</button>
+        <button class="nav-btn" data-page="history">History</button>
+        <button class="nav-btn" data-page="webhooks">Webhooks</button>
+      </nav>
+    </div>
+    <div class="header-right">
+      <div class="balance-display">
+        <span class="balance-label">Balance:</span>
+        <span class="balance-value" id="header-balance">$10,000.00</span>
+      </div>
+      <button class="reset-btn" id="reset-btn">Reset Account</button>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <!-- ========== MARKETS PAGE ========== -->
+    <div class="page markets-page active" id="page-markets">
+      <div class="markets-toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="search-input" placeholder="Search coins...">
+        </div>
+      </div>
+      <div class="markets-table-wrap">
+        <table class="markets-table">
+          <thead>
+            <tr>
+              <th data-sort="name">Name <span class="sort-arrow"></span></th>
+              <th data-sort="price">Price <span class="sort-arrow"></span></th>
+              <th data-sort="change">24h Change <span class="sort-arrow"></span></th>
+              <th>24h High / Low</th>
+              <th data-sort="volume">Volume <span class="sort-arrow"></span></th>
+              <th>Last 1h</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="markets-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== TRADE PAGE (Binance Futures style) ========== -->
+    <div class="page trade-page" id="page-trade">
+      <!-- TOP BAR: coin info + stats -->
+      <div class="fut-topbar">
+        <div class="fut-topbar-left">
+          <div class="coin-icon coin-btc" id="trade-coin-icon" style="width:24px;height:24px;font-size:10px">B</div>
+          <div class="fut-pair-info">
+            <span class="fut-pair-name" id="trade-coin-name">Bitcoin</span>
+            <span class="fut-pair-symbol" id="trade-coin-symbol">BTCUSDT</span>
+            <span class="fut-perp-tag">Perp</span>
+          </div>
+          <div class="fut-price-main" id="trade-price">$0.00</div>
+          <div class="fut-price-change" id="trade-change">+0.00%</div>
+        </div>
+        <div class="fut-topbar-stats">
+          <div class="fut-stat"><span class="fut-stat-label">Mark Price</span><span class="fut-stat-value" id="trade-mark-price">$0.00</span></div>
+          <div class="fut-stat"><span class="fut-stat-label">Index Price</span><span class="fut-stat-value" id="trade-index-price">$0.00</span></div>
+          <div class="fut-stat"><span class="fut-stat-label">Funding Rate</span><span class="fut-stat-value" id="trade-funding">0.0075%</span></div>
+          <div class="fut-stat"><span class="fut-stat-label">Countdown</span><span class="fut-stat-value" id="trade-countdown">--:--:--</span></div>
+          <div class="fut-stat"><span class="fut-stat-label">24h High</span><span class="fut-stat-value" id="trade-high">$0</span></div>
+          <div class="fut-stat"><span class="fut-stat-label">24h Low</span><span class="fut-stat-value" id="trade-low">$0</span></div>
+          <div class="fut-stat"><span class="fut-stat-label">24h Vol</span><span class="fut-stat-value" id="trade-vol">0</span></div>
+        </div>
+      </div>
+
+      <!-- MAIN AREA: Order Book | Chart | Order Panel -->
+      <div class="fut-main">
+        <!-- LEFT: Order Book -->
+        <div class="fut-ob">
+          <div class="fut-ob-header">
+            <span>Price (USDT)</span>
+            <span>Size</span>
+            <span>Total</span>
+          </div>
+          <div class="fut-ob-asks" id="order-book-asks"></div>
+          <div class="fut-ob-mid">
+            <span class="fut-ob-mid-price" id="ob-mid-price">$0.00</span>
+            <span class="fut-ob-mid-label" id="ob-mid-label">Mark</span>
+          </div>
+          <div class="fut-ob-bids" id="order-book-bids"></div>
+        </div>
+
+        <!-- CENTER: Chart -->
+        <div class="fut-chart-area">
+          <div class="fut-chart-toolbar">
+            <div class="timeframe-bar">
+              <button class="tf-btn" data-tf="1m">1m</button>
+              <button class="tf-btn" data-tf="5m">5m</button>
+              <button class="tf-btn" data-tf="15m">15m</button>
+              <button class="tf-btn active" data-tf="1h">1H</button>
+              <button class="tf-btn" data-tf="4h">4H</button>
+              <button class="tf-btn" data-tf="1d">1D</button>
+            </div>
+          </div>
+          <div class="chart-container" id="chart-container">
+            <div class="chart-wrapper" id="chart-wrapper"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Order Form -->
+        <div class="fut-order-panel">
+          <div class="order-tabs">
+            <button class="order-tab active-buy" id="tab-buy" data-side="buy">Buy</button>
+            <button class="order-tab" id="tab-sell" data-side="sell">Sell</button>
+          </div>
+          <div class="fut-order-body">
+            <div class="order-type-row">
+              <button class="order-type-btn active" data-otype="market">Market</button>
+              <button class="order-type-btn" data-otype="limit">Limit</button>
+              <button class="order-type-btn" data-otype="stop">Stop</button>
+            </div>
+            <div class="input-group" id="limit-price-group" style="display:none">
+              <div class="input-field fut-input">
+                <input type="number" id="limit-price" placeholder="Price" step="0.01">
+                <span class="unit">USDT</span>
+              </div>
+            </div>
+            <div class="input-group">
+              <div class="input-field fut-input">
+                <input type="number" id="order-amount" placeholder="Amount" step="0.01" min="0">
+                <span class="unit">USDT</span>
+              </div>
+            </div>
+            <div class="pct-btns">
+              <button class="pct-btn" data-pct="25">25%</button>
+              <button class="pct-btn" data-pct="50">50%</button>
+              <button class="pct-btn" data-pct="75">75%</button>
+              <button class="pct-btn" data-pct="100">100%</button>
+            </div>
+            <div class="fut-leverage-row">
+              <span class="leverage-label">Cross</span>
+              <input type="range" class="leverage-slider" id="leverage-slider" min="1" max="125" value="1" step="1">
+              <span class="leverage-val" id="leverage-val">1x</span>
+            </div>
+            <div class="pct-btns" style="margin-bottom:8px">
+              <button class="pct-btn lev-preset" data-lev="10">10x</button>
+              <button class="pct-btn lev-preset" data-lev="25">25x</button>
+              <button class="pct-btn lev-preset" data-lev="50">50x</button>
+              <button class="pct-btn lev-preset" data-lev="100">100x</button>
+              <button class="pct-btn lev-preset" data-lev="125">125x</button>
+            </div>
+            <div class="input-group" id="tp-group" style="display:none">
+              <div class="input-label"><span>TP</span></div>
+              <div class="input-field fut-input">
+                <input type="number" id="tp-price" placeholder="TP Price" step="0.01">
+                <span class="unit">USDT</span>
+              </div>
+            </div>
+            <div class="input-group" id="sl-group" style="display:none">
+              <div class="input-label"><span>SL</span></div>
+              <div class="input-field fut-input">
+                <input type="number" id="sl-price" placeholder="SL Price" step="0.01">
+                <span class="unit">USDT</span>
+              </div>
+            </div>
+            <div class="fut-tpsl-toggle">
+              <button class="fut-tpsl-btn" id="tpsl-toggle">+ TP/SL</button>
+            </div>
+            <div class="fut-order-info">
+              <div class="fut-info-row"><span>Fee</span><span id="order-fee">0.00 USDT</span></div>
+              <div class="fut-info-row"><span>Cost</span><span id="order-size">0</span></div>
+              <div class="fut-info-row"><span>Liq. Price</span><span id="order-liq">—</span></div>
+            </div>
+            <div class="fut-avail">
+              <span>Avail.</span>
+              <span id="available-balance">10,000.00 USDT</span>
+            </div>
+            <button class="btn-buy fut-btn-buy" id="btn-buy">Buy / Long</button>
+            <button class="btn-sell fut-btn-sell" id="btn-sell">Sell / Short</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM: Positions Panel -->
+      <div class="fut-bottom">
+        <div class="fut-bottom-tabs">
+          <button class="fut-btab active" data-btab="positions">Positions (<span id="pos-count">0</span>)</button>
+          <button class="fut-btab" data-btab="orders">Open Orders (<span id="ord-count">0</span>)</button>
+        </div>
+        <div class="fut-bottom-content" id="fut-positions-panel">
+          <table class="fut-pos-table">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Size</th>
+                <th>Entry Price</th>
+                <th>Mark Price</th>
+                <th>Liq. Price</th>
+                <th>Margin</th>
+                <th>PNL (ROE%)</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="positions-mini-list"></tbody>
+          </table>
+          <div class="fut-pos-empty" id="fut-pos-empty">No open positions</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PORTFOLIO PAGE ========== -->
+    <div class="page portfolio-page" id="page-portfolio">
+      <div class="portfolio-summary">
+        <div class="summary-card">
+          <div class="card-label">Total Equity</div>
+          <div class="card-value" id="total-equity">$10,000.00</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-label">Available Balance</div>
+          <div class="card-value" id="avail-balance">$10,000.00</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-label">Unrealized P&L</div>
+          <div class="card-value" id="unrealized-pnl">$0.00</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-label">Margin Used</div>
+          <div class="card-value" id="margin-used">$0.00</div>
+        </div>
+      </div>
+      <div class="section-title">Open Positions</div>
+      <table class="positions-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Side</th>
+            <th>Entry</th>
+            <th>Mark Price</th>
+            <th>Leverage</th>
+            <th>Margin</th>
+            <th>Liq. Price</th>
+            <th>P&L</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="portfolio-positions"></tbody>
+      </table>
+      <div class="empty-state" id="portfolio-empty" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg>
+        <p>No open positions</p>
+      </div>
+    </div>
+
+    <!-- ========== HISTORY PAGE ========== -->
+    <div class="page history-page" id="page-history">
+      <div class="section-title">Trade History</div>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Symbol</th>
+            <th>Side</th>
+            <th>Type</th>
+            <th>Entry</th>
+            <th>Exit</th>
+            <th>Amount</th>
+            <th>Leverage</th>
+            <th>Fee</th>
+            <th>P&L</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+      <div class="empty-state" id="history-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <p>No trade history yet</p>
+      </div>
+    </div>
+
+    <!-- ========== WEBHOOKS PAGE ========== -->
+    <div class="page webhooks-page" id="page-webhooks">
+      <div class="wh-simple">
+        <div class="wh-simple-card">
+          <div class="wh-simple-title">Discord Webhook</div>
+          <p class="wh-simple-desc">One webhook for all coins. Position reports and close notifications will be sent to this Discord channel.</p>
+          <div class="input-group" style="margin-top:16px">
+            <div class="input-label"><span>Webhook URL</span></div>
+            <div class="input-field">
+              <input type="url" id="wh-url-input" placeholder="https://discord.com/api/webhooks/...">
+            </div>
+          </div>
+          <div class="wh-simple-row">
+            <span class="wh-simple-label">Auto-send interval</span>
+            <select id="wh-interval" class="webhook-select">
+              <option value="30000">30s</option>
+              <option value="60000" selected>1 min</option>
+              <option value="120000">2 min</option>
+              <option value="300000">5 min</option>
+              <option value="600000">10 min</option>
+            </select>
+          </div>
+          <div class="wh-simple-status" id="wh-status">
+            <span class="wh-status-dot wh-status-none"></span>
+            <span id="wh-status-text">Not configured</span>
+          </div>
+          <div class="wh-simple-actions">
+            <button class="btn btn-primary" id="wh-save-btn">Save</button>
+            <button class="btn btn-secondary" id="wh-test-btn">Test Connection</button>
+            <button class="btn btn-sm" id="wh-toggle-btn" style="background:var(--green);color:#fff">Enabled</button>
+            <button class="btn btn-ghost" id="wh-delete-btn" style="color:var(--red)">Delete</button>
+          </div>
+          <div class="webhook-test-result" id="wh-test-result" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- RESET MODAL -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal">
+    <div class="modal-title">Reset Account?</div>
+    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:4px">This will reset your balance to $10,000 and close all positions.</p>
+    <p style="color:var(--red);font-size:12px">This action cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-secondary" id="reset-cancel">Cancel</button>
+      <button class="modal-btn modal-btn-primary" id="reset-confirm" style="background:var(--red);color:#fff">Reset</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/utils.js"></script>
+<script src="js/data.js"></script>
+<script src="js/account.js"></script>
+<script src="js/trading.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/webhooks.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

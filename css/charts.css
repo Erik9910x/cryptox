@@ -1,0 +1,14 @@
+/* ===== CHART STYLES ===== */
+.chart-wrapper{width:100%;height:100%;position:relative}
+.chart-wrapper .tv-lightweight-charts{width:100%!important;height:100%!important}
+.chart-loading{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:var(--bg-primary);z-index:5;
+}
+.chart-no-data{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:var(--text-muted);font-size:13px;
+}
+/* Override Lightweight Charts colors */
+.chart-wrapper table{background:transparent!important}
+.chart-wrapper canvas{background:transparent!important}
